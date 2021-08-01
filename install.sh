@@ -16,7 +16,7 @@ if [ $ver -ne 3 ]; then
 fi
 
 import_path=`python3 -c "import sys;print(sys.path[-1] + '/baton')"`
-mkdir $import_path
+mkdir $import_path >/dev/null 2>&1
 cp -f __init__.py $import_path
 if [ $? -ne 0 ];then
     echo "Unable to copy file(s) to "$import_path\
