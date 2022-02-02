@@ -8,9 +8,9 @@ class Baton:
         self.__owners = {}
         self.__cc = {}
         self.__arg = []
-        self.__clean = True
+        self.__valid = True
         self.__where = ""
-        self.__dirty_msg = ""
+        self.__err_msg = ""
 
     def __deepcopy(self, d):
         if not isinstance(d, dict):
@@ -36,7 +36,7 @@ class Baton:
             return None
         if key not in self.__slots:
             return None
-        cc = self.__cc.get[key]
+        cc = self.__cc.get(key)
         d = self.__slots[key]
         caller = sys._getframe().f_back.f_code.co_name
         if self.__owners[key] == caller:
@@ -68,7 +68,7 @@ class Baton:
         """
         Use this method to get the arg passed by the previous routine.
         """
-        if not self.__clean:
+        if not self.__valid:
             raise ValueError(
                 "Baton is dirty..can't call pop_arg, use "
                 "baton.debug() to get details"
@@ -85,49 +85,41 @@ class Baton:
         self.__arg.append(r)
         return self
 
-    def clean(self):
+    def expired(self):
         """
-        Tells if the baton is clean or not.
+        Returns True if the baton is expired (to be skipped).
         """
-        if not self.__clean:
-            return None
-        return self
+        if not self.__valid:
+            return self
+        return None
 
-    def dirty(self, msg=""):
+    def expire(self, msg=""):
         """
-        Call this method to mark the baton as dirty. A dirty baton is passed
-        by all functions without doing anything.
+        Call this method to mark the baton as expired. An expired baton is 
+        passed by all functions without doing anything.
         """
-        self.__clean = False
+        self.__valid = False
         from inspect import getframeinfo, stack
 
         caller = getframeinfo(stack()[1][0])
         line = str(caller.lineno)
         self.__where = f"{os.path.basename(caller.filename)}+{line}"
-        self.__dirty_msg = msg
+        self.__err_msg = msg
         return self
 
-    def sanitize(self):
+    def renew(self):
         """
-        It sanitizes a dirty baton. A sanitized baton is one that all is
-        accepted (not bypassed) by functions.
+        Renew the expired baton so that functions do not avoid it.
         """
-        self.__clean = True
+        self.__valid = True
         self.__where = ""
-        self.__dirty_msg = ""
+        self.__err_msg = ""
+        self.__arg.clear()
         return self
 
     def debug(self):
         """
-        Call it to print details of where and why the baton was dirtied.
+        Returns a tuple of the reason why batcon was dirtied and the place
+        in source code where it was dirtied.
         """
-        return self.__name, self.__dirty_msg, self.__where
-
-    def flush(self):
-        """
-        Call it before re-using the baton in the next loopback. It clears all
-        the pushed arguments and sanitizes the baton. The args are cleared
-        just in case a function is pushing an arg which no one is popping.
-        """
-        self.__arg.clear()
-        self.sanitize()
+        return self.__err_msg, self.__where
