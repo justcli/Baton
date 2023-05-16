@@ -85,17 +85,17 @@ class Baton:
         self.__arg.append(r)
         return self
 
-    def expired(self):
+    def is_valid(self):
         """
-        Returns True if the baton is expired (to be skipped).
+        Tells if the baton is valid or not.
         """
-        if not self.__valid:
+        if self.__valid:
             return self
         return None
 
-    def expire(self, msg=""):
+    def invalidate(self, msg=""):
         """
-        Call this method to mark the baton as expired. An expired baton is 
+        Call this method to mark the baton as invalid. An invalid baton is 
         passed by all functions without doing anything.
         """
         self.__valid = False
@@ -107,9 +107,10 @@ class Baton:
         self.__err_msg = msg
         return self
 
-    def renew(self):
+    def sanitize(self):
         """
-        Renew the expired baton so that functions do not avoid it.
+        It sanitizes a dirty baton. A sanitized baton is one that all is
+        accepted (not bypassed) by functions.
         """
         self.__valid = True
         self.__where = ""
@@ -119,7 +120,8 @@ class Baton:
 
     def debug(self):
         """
-        Returns a tuple of the reason why batcon was dirtied and the place
-        in source code where it was dirtied.
+        Returns a tuple of the reason why batcon was invalidated and the place
+        in source code where it was invalidated.
         """
         return self.__err_msg, self.__where
+
